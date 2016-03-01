@@ -21,6 +21,12 @@
   #define CLEAR_BIT(port, bitMask) digitalWrite(*(port), LOW);
 #endif
 
+#if defined(__rasberrypi__)
+	#define USE_WIRINGPI
+	#define SET_BIT(port, bitMask) /* nothing */
+	#define CLEAR_BIT(port, bitMask) /* nothing */
+#endif
+
 
 TFT_ILI9340::TFT_ILI9340(uint8_t cs, uint8_t dc, uint8_t rst) : Adafruit_GFX(TFT_WIDTH, TFT_HEIGHT) {
 	_cs   = cs;
@@ -43,6 +49,33 @@ void TFT_ILI9340::setRegister(const uint8_t reg,uint8_t val){
 }
 
 /********************************** low level pin and SPI transfer based on MCU */
+#ifdef __rasberrypi__
+    inline void TFT_ILI9340::spiwrite(uint8_t c) {
+        wiringPiSPIDataRW (0, c, 1);
+    }
+    
+    void TFT_ILI9340::writeCommand(uint8_t c) {
+        spiwrite(c);
+    }
+    
+    void TFT_ILI9340::writeCommands(uint8_t *cmd, uint8_t length) {
+        wiringPiSPIDataRW(0, cmd, length);
+    }
+    
+    void TFT_ILI9340::writeData(uint8_t c) {
+        spiwrite(c);
+    }
+    
+    void TFT_ILI9340::writedata16(uint16_t d) {
+        spiwrite(d >> 8);
+        spiwrite(d);
+    }
+    
+    void TFT_ILI9340::setBitrate(uint32_t n) {
+        wiringPiSPISetup (0, n) ;
+    }
+#endif
+
 #ifdef __AVR__
 
 	inline void TFT_ILI9340::spiwrite(uint8_t c){
@@ -217,7 +250,12 @@ void TFT_ILI9340::setRegister(const uint8_t reg,uint8_t val){
 #endif
 
 void TFT_ILI9340::commonInit(){
-#if defined(__AVR__) 
+    
+#if defined(__rasberrypi__)
+    wiringPiSPISetup(0, 4000000); // 4MHz
+    _inited = true;
+    
+#elif defined(__AVR__) 
 	pinMode(_rs, OUTPUT);
 	pinMode(_cs, OUTPUT);
 	csport    = portOutputRegister(digitalPinToPort(_cs));

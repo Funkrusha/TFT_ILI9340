@@ -106,7 +106,9 @@ typedef unsigned char prog_uchar;
   #include <avr/pgmspace.h>
 #endif
 
-
+#ifdef __raspberrypi__
+    #include <wiringPi.h>
+#endif
 
 #define TFT_WIDTH  				240//240
 #define TFT_HEIGHT 				320//320
@@ -230,6 +232,11 @@ class TFT_ILI9340 : public Adafruit_GFX {
 	void  			writeCommands(uint8_t *cmd, uint8_t length);
 	void 			setRegister(const uint8_t reg,uint8_t val);
 	bool 			boundaryCheck(int16_t x,int16_t y);
+
+#if defined(__raspberrypi__)
+    void	 		spiwrite(uint8_t);
+    uint8_t 		_cs,_rs,_sid,_sclk,_rst;
+#endif
 
 #if defined(__AVR__)
 	void	 		spiwrite(uint8_t);
